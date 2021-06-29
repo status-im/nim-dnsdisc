@@ -1,6 +1,10 @@
-# nim-disc
+# nim-dnsdisc
 
-Nim discovery library supporting EIP-1459
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+
+> *NOTE:* WIP – Initial development is in progress, but there has not yet been a stable, usable release
+
+Nim DNS discovery library supporting EIP-1459
 
 ## License
 
