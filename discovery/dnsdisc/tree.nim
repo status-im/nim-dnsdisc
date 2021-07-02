@@ -17,10 +17,10 @@ export keys, enr
 ## at https://github.com/ethereum/go-ethereum/blob/master/p2p/dnsdisc
 
 const
-  RootPrefix = "enrtree-root:v1"
-  BranchPrefix = "enrtree-branch:"
-  EnrPrefix = "enr:"
-  LinkPrefix = "enrtree://"
+  RootPrefix* = "enrtree-root:v1"
+  BranchPrefix* = "enrtree-branch:"
+  EnrPrefix* = "enr:"
+  LinkPrefix* = "enrtree://"
 
 type
   Tree* = object
