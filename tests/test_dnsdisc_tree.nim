@@ -1,14 +1,13 @@
 {.used.}
 
 import
-  std/strutils,
+  std/[strutils, sequtils],
   testutils/unittests,
   chronos,
   stew/[base64, results],
   ../discovery/dnsdisc/tree
 
 procSuite "Test DNS Discovery: Merkle Tree":
-
   asyncTest "Parse root entry":
     # Expected case
     let entryRes = parseRootEntry("enrtree-root:v1 e=JWXYDBPXYWG6FX3GMDIBFA6CJ4 l=C7HRFPF3BLGF3YR4DY5KX3SMBE seq=1 sig=o908WmNp7LibOfPsr4btQwatZJ5URBr2ZAuxvK4UWHlsB9sUOTJQaGAlLPVAhM__XJesCHxLISo94z5Z2a463gA")
@@ -146,3 +145,70 @@ procSuite "Test DNS Discovery: Merkle Tree":
       parseLinkEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5DPRT2@morenodes.example.org")
                      .error()
                      .contains("Invalid public key")
+  
+  asyncTest "Parse generic subtree entry":
+    let
+      expectedBranch = parseBranchEntry("enrtree-branch:2XS2367YHAXJFGLZHVAWLQD4ZY,H4FHT4B454P6UXFD7JCYQ5PWDY,MHTDO6TMUBRIA2XWG5LUDACK24").tryGet()
+      expectedEnr = parseEnrEntry("enr:-HW4QOFzoVLaFJnNhbgMoDXPnOvcdVuj7pDpqRvh6BRDO68aVi5ZcjB3vzQRZH2IcLBGHzo8uUN3snqmgTiE56CH3AMBgmlkgnY0iXNlY3AyNTZrMaECC2_24YYkYHEgdzxlSNKQEnHhuNAbNlMlWJxrJxbAFvA").tryGet()
+      expectedLink = parseLinkEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org").tryGet()
+  
+    # Expected cases
+    check:
+      # Branch entry
+      expectedBranch == parseSubtreeEntry("enrtree-branch:2XS2367YHAXJFGLZHVAWLQD4ZY,H4FHT4B454P6UXFD7JCYQ5PWDY,MHTDO6TMUBRIA2XWG5LUDACK24")
+                                         .tryGet()
+                                         .branchEntry
+
+      # Enr entry
+      expectedEnr == parseSubtreeEntry("enr:-HW4QOFzoVLaFJnNhbgMoDXPnOvcdVuj7pDpqRvh6BRDO68aVi5ZcjB3vzQRZH2IcLBGHzo8uUN3snqmgTiE56CH3AMBgmlkgnY0iXNlY3AyNTZrMaECC2_24YYkYHEgdzxlSNKQEnHhuNAbNlMlWJxrJxbAFvA")
+                                      .tryGet()
+                                      .enrEntry
+      # Link entry
+      expectedLink == parseSubtreeEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org")
+                                       .tryGet()
+                                       .linkEntry
+    
+    # Invalid cases
+    check:
+      # Not a subtree entry
+      parseSubtreeEntry("enrtree-root:v1 e=JWXYDBPXYWG6FX3GMDIBFA6CJ4 l=C7HRFPF3BLGF3YR4DY5KX3SMBE seq=1 sig=o908WmNp7LibOfPsr4btQwatZJ5URBr2ZAuxvK4UWHlsB9sUOTJQaGAlLPVAhM__XJesCHxLISo94z5Z2a463gA")
+                       .error()
+                       .contains("Unexpected subtree entry type")
+      
+      # Subtree entry invalid: Invalid child
+      parseSubtreeEntry("enrtree-branch:2XS2367YHAXJFGLZHVAWLQD4 ,H4FHT4B454P6UXFD7JCYQ5PWDY,MHTDO6TMUBRIA2XWG5LUDACK24")
+                       .error()
+                       .contains("Invalid child")
+
+
+  asyncTest "Access tree entries":
+    # Build the example tree from EIP-1459
+    var
+      testTree = Tree()
+      entries: seq[SubtreeEntry]
+
+    testTree.rootEntry = parseRootEntry("enrtree-root:v1 e=JWXYDBPXYWG6FX3GMDIBFA6CJ4 l=C7HRFPF3BLGF3YR4DY5KX3SMBE seq=1 sig=o908WmNp7LibOfPsr4btQwatZJ5URBr2ZAuxvK4UWHlsB9sUOTJQaGAlLPVAhM__XJesCHxLISo94z5Z2a463gA").tryGet()
+    testTree.entries.add(parseSubtreeEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org").tryGet())
+    testTree.entries.add(parseSubtreeEntry("enrtree-branch:2XS2367YHAXJFGLZHVAWLQD4ZY,H4FHT4B454P6UXFD7JCYQ5PWDY,MHTDO6TMUBRIA2XWG5LUDACK24").tryGet())
+    testTree.entries.add(parseSubtreeEntry("enr:-HW4QOFzoVLaFJnNhbgMoDXPnOvcdVuj7pDpqRvh6BRDO68aVi5ZcjB3vzQRZH2IcLBGHzo8uUN3snqmgTiE56CH3AMBgmlkgnY0iXNlY3AyNTZrMaECC2_24YYkYHEgdzxlSNKQEnHhuNAbNlMlWJxrJxbAFvA").tryGet())
+    testTree.entries.add(parseSubtreeEntry("enr:-HW4QAggRauloj2SDLtIHN1XBkvhFZ1vtf1raYQp9TBW2RD5EEawDzbtSmlXUfnaHcvwOizhVYLtr7e6vw7NAf6mTuoCgmlkgnY0iXNlY3AyNTZrMaECjrXI8TLNXU0f8cthpAMxEshUyQlK-AM0PW2wfrnacNI").tryGet())
+    testTree.entries.add(parseSubtreeEntry("enr:-HW4QLAYqmrwllBEnzWWs7I5Ev2IAs7x_dZlbYdRdMUx5EyKHDXp7AV5CkuPGUPdvbv1_Ms1CPfhcGCvSElSosZmyoqAgmlkgnY0iXNlY3AyNTZrMaECriawHKWdDRk2xeZkrOXBQ0dfMFLHY4eENZwdufn1S1o").tryGet())
+
+    # Test accessing node entries
+
+    let nodes = testTree.getNodes()
+
+    check:
+      nodes.len == 3
+      nodes.contains(parseEnrEntry("enr:-HW4QOFzoVLaFJnNhbgMoDXPnOvcdVuj7pDpqRvh6BRDO68aVi5ZcjB3vzQRZH2IcLBGHzo8uUN3snqmgTiE56CH3AMBgmlkgnY0iXNlY3AyNTZrMaECC2_24YYkYHEgdzxlSNKQEnHhuNAbNlMlWJxrJxbAFvA").tryGet())
+      nodes.contains(parseEnrEntry("enr:-HW4QAggRauloj2SDLtIHN1XBkvhFZ1vtf1raYQp9TBW2RD5EEawDzbtSmlXUfnaHcvwOizhVYLtr7e6vw7NAf6mTuoCgmlkgnY0iXNlY3AyNTZrMaECjrXI8TLNXU0f8cthpAMxEshUyQlK-AM0PW2wfrnacNI").tryGet())
+      nodes.contains(parseEnrEntry("enr:-HW4QLAYqmrwllBEnzWWs7I5Ev2IAs7x_dZlbYdRdMUx5EyKHDXp7AV5CkuPGUPdvbv1_Ms1CPfhcGCvSElSosZmyoqAgmlkgnY0iXNlY3AyNTZrMaECriawHKWdDRk2xeZkrOXBQ0dfMFLHY4eENZwdufn1S1o").tryGet())
+
+
+    # Test accessing link entries
+
+    let links = testTree.getLinks()
+
+    check:
+      links.len == 1
+      links.contains(parseLinkEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org").tryGet())

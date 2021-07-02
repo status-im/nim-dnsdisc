@@ -1,7 +1,7 @@
 {.push raises: [Defect]}
 
 import
-  std/[strscans, strutils],
+  std/[strscans, strutils, sequtils],
   stew/[base32, base64, results],
   eth/keys,
   eth/p2p/discoveryv5/enr
@@ -23,6 +23,12 @@ const
   LinkPrefix = "enrtree://"
 
 type
+  Tree* = object
+    ## A tree consists of a root entry
+    ## and a seq of subtree entries
+    rootEntry*: RootEntry
+    entries*: seq[SubtreeEntry]
+
   EntryParseResult*[T] = Result[T, string]
 
   # Entry types
@@ -43,6 +49,20 @@ type
     str*: string  # String representation of subdomain, i.e. <key>@<domain>
     pubKey*: PublicKey # Public key that signed the list at this link
     domain*: string
+  
+  SubtreeEntryKind* = enum
+    Branch
+    Enr
+    Link
+  
+  SubtreeEntry* = object
+    case kind*: SubtreeEntryKind
+    of Branch:
+      branchEntry*: BranchEntry
+    of Enr:
+      enrEntry*: EnrEntry
+    of Link:
+      linkEntry*: LinkEntry
 
 ####################
 # Helper functions #
@@ -169,3 +189,36 @@ proc parseLinkEntry*(entry: string): EntryParseResult[LinkEntry] =
   ok(LinkEntry(str: keyStr & "@" & fqdnStr,
                domain: fqdnStr,
                pubKey: key))
+
+proc parseSubtreeEntry*(entry: string): EntryParseResult[SubtreeEntry] =
+  var subtreeEntry: SubtreeEntry
+  
+  try:
+    if entry.startsWith(BranchPrefix):
+      subtreeEntry = SubtreeEntry(kind: Branch, branchEntry: parseBranchEntry(entry).tryGet())
+    elif entry.startsWith(EnrPrefix):
+      subtreeEntry = SubtreeEntry(kind: Enr, enrEntry: parseEnrEntry(entry).tryGet())
+    elif entry.startsWith(LinkPrefix):
+      subtreeEntry = SubtreeEntry(kind: Link, linkEntry: parseLinkEntry(entry).tryGet())
+    else:
+      return err("Unexpected subtree entry type")
+  except ValueError as e:
+    return err("Invalid syntax: " & e.msg)
+
+  ok(subtreeEntry)
+
+##################
+# Tree accessors #
+##################
+
+proc getNodes*(tree: Tree): seq[EnrEntry] {.raises: [Defect, ValueError]} =
+  ## Returns a list of node entries in the tree
+  
+  return tree.entries.filterIt(it.kind == Enr)
+                     .mapIt(it.enrEntry)
+
+proc getLinks*(tree: Tree): seq[LinkEntry] {.raises: [Defect, ValueError]} =
+  ## Returns a list of link entries in the tree
+  
+  return tree.entries.filterIt(it.kind == Link)
+                     .mapIt(it.linkEntry)
