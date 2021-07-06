@@ -13,7 +13,7 @@ procSuite "Test DNS Discovery: Client":
     ## parsing the entry and verifying the signature.
     
     # Expected case
-    
+
     proc resolver(domain: string): Future[string] {.async.} =
       return "enrtree-root:v1 e=JWXYDBPXYWG6FX3GMDIBFA6CJ4 l=C7HRFPF3BLGF3YR4DY5KX3SMBE seq=1 sig=o908WmNp7LibOfPsr4btQwatZJ5URBr2ZAuxvK4UWHlsB9sUOTJQaGAlLPVAhM__XJesCHxLISo94z5Z2a463gA"
 
@@ -36,4 +36,28 @@ procSuite "Test DNS Discovery: Client":
       .error()
       .contains("Could not verify signature")
 
+  asyncTest "Resolve subtree entry":
+    ## This tests resolving a subtree TXT entry at a given subdomain,
+    ## parsing the entry and verifying the subdomain hash.
+    
+    # Expected case
+    
+    proc resolver(domain: string): Future[string] {.async.} =
+      return "enr:-HW4QOFzoVLaFJnNhbgMoDXPnOvcdVuj7pDpqRvh6BRDO68aVi5ZcjB3vzQRZH2IcLBGHzo8uUN3snqmgTiE56CH3AMBgmlkgnY0iXNlY3AyNTZrMaECC2_24YYkYHEgdzxlSNKQEnHhuNAbNlMlWJxrJxbAFvA"
+    
+    let
+      loc = parseLinkEntry("enrtree://AKPYQIUQIL7PSIACI32J7FGZW56E5FKHEFCCOFHILBIMW3M6LWXS2@nodes.example.org").tryGet()
+      entry = waitFor resolveSubtreeEntry(resolver, loc, "2XS2367YHAXJFGLZHVAWLQD4ZY")
 
+    check:
+      entry.isOk()
+      entry[].kind == Enr
+      entry[].enrEntry == parseEnrEntry("enr:-HW4QOFzoVLaFJnNhbgMoDXPnOvcdVuj7pDpqRvh6BRDO68aVi5ZcjB3vzQRZH2IcLBGHzo8uUN3snqmgTiE56CH3AMBgmlkgnY0iXNlY3AyNTZrMaECC2_24YYkYHEgdzxlSNKQEnHhuNAbNlMlWJxrJxbAFvA").tryGet()
+
+    # Invalid cases
+
+    check:
+      # Invalid hash
+      (waitFor resolveSubtreeEntry(resolver, loc, "2XS2367YHAXJFGLZHVAWLQE4ZY"))
+      .error()
+      .contains("Could not verify subdomain hash")

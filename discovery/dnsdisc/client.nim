@@ -5,7 +5,8 @@ import
   chronicles,
   chronos,
   eth/keys,
-  stew/[byteutils, results],
+  nimcrypto/[hash, keccak],
+  stew/[base32, byteutils, results],
   ./tree
 
 export
@@ -30,12 +31,51 @@ const
 # Tree sync functions #
 #######################
 
-proc resolveNextEntry(subdomain: string): ResolveResult[SubtreeEntry] =
-  ## Resolves subtree entry at given subdomain
-  ## 
-  ## @TODO implement
+proc parseAndVerifySubtreeEntry(txtRecord: string, hashStr: string): EntryParseResult[SubtreeEntry] {.raises: [Defect, ValueError, Base32Error].} =
+  ## Parses subtree TXT entry and verifies that it matches the hash
   
-  ok(SubtreeEntry())
+  let res = parseSubtreeEntry(txtRecord)
+
+  if res.isErr():
+    # Return error result
+    trace "Failed to parse subtree entry", record=txtRecord
+    return res
+
+  let
+    subtreeEntry = res[]
+    checkHash = Base32.decode(hashStr)
+    entryHash = keccak256.digest(txtRecord.toBytes()).data
+  
+  trace "Verifying parsed subtree entry", subtreeEntry=subtreeEntry
+
+  if entryHash[0..checkHash.len - 1] != checkHash:
+    # Check that entryHash starts with checkHash
+    trace "Failed to verify subdomain hash", subtreeEntry=subtreeEntry, hashStr=hashStr
+    return err("Could not verify subdomain hash")
+
+  ok(subtreeEntry)
+
+proc resolveSubtreeEntry*(resolver: Resolver, loc: LinkEntry, subdomain: string): Future[ResolveResult[SubtreeEntry]] {.async, raises: [Defect, ValueError, Base32Error].} =
+  ## Resolves subtree entry at given subdomain
+  ## Follows EIP-1459 client protocol
+
+  let lookupFut = resolver(subdomain & "." & loc.domain)
+
+  if not await withTimeout(lookupFut, ResolverTimeout):
+    error "Failed to resolve DNS record", domain=subdomain
+    return err("Resolution failure: timeout")
+  
+  let txtRecord = lookupFut.read()
+  
+  trace "Resolving entry record", domain=subdomain, record=txtRecord
+
+  let res = parseAndVerifySubtreeEntry(txtRecord, subdomain)
+  
+  if res.isErr():
+    error "Failed to parse and verify subtree entry", domain=loc.domain, record=txtRecord
+    return err("Resolution failure: " & res.error())
+    
+  return ok(res[])
 
 proc resolveAllEntries(rootEntry: RootEntry): ResolveResult[seq[SubtreeEntry]] =
   ## Resolves all subtree entries at given root
