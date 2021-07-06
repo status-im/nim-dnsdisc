@@ -51,8 +51,9 @@ proc verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool {.raises: [D
   let
     sigHash = fmt"{RootPrefix} e={rootEntry.eroot} l={rootEntry.lroot} seq={rootEntry.seqNo}".toBytes()
     sig = SignatureNR.fromRaw(rootEntry.signature)
-  
+
   if sig.isOk():
+    trace "Verifying signature", sig=repr(sig[]), msg=repr(sigHash), key=repr(pubKey)
     return keys.verify(sig = sig[],
                        msg = sigHash,
                        key = pubKey)
@@ -64,11 +65,15 @@ proc parseAndVerifyRoot(txtRecord: string, loc: LinkEntry): EntryParseResult[Roo
 
   if res.isErr():
     # Return error result
+    trace "Failed to parse root record", record=txtRecord
     return res
 
   let rootEntry = res[]
+  
+  trace "Verifying parsed root entry", rootEntry=rootEntry
 
   if not verifySignature(rootEntry, loc.pubKey):
+    trace "Failed to verify signature", rootEntry=rootEntry, pubKey=loc.pubKey
     return err("Could not verify signature")
 
   ok(rootEntry)
@@ -92,7 +97,7 @@ proc resolveRoot*(resolver: Resolver, loc: LinkEntry): Future[ResolveResult[Root
   
   if res.isErr():
     error "Failed to parse and verify root entry", domain=loc.domain, record=txtRecord
-    return err("Resolution failure: failed to parse and verify")
+    return err("Resolution failure: " & res.error())
     
   return ok(res[])
 
