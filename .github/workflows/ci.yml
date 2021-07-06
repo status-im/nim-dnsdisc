@@ -4,38 +4,12 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   test:
     strategy:
-      fail-fast: false
-      max-parallel: 20
       matrix:
-        target:
-          # Unit tests
-          - os: linux
-            cpu: amd64
-          - os: linux
-            cpu: i386
-          - os: macos
-            cpu: amd64
-          - os: windows
-            cpu: i386
-          - os: windows
-            cpu: amd64
-        include:
-          - target:
-              os: linux
-            builder: ubuntu-20.04
-          - target:
-              os: macos
-            builder: macos-10.15
-          - target:
-              os: windows
-            builder: windows-2019
-
-    defaults:
-      run:
-        shell: bash
-
-    name: '${{ matrix.target.os }}-${{ matrix.target.cpu }}'
-    runs-on: ${{ matrix.builder }}
+        os: [ubuntu-latest, macos-latest]
+    
+    name: '${{ matrix.os }}'
+    runs-on: ${{ matrix.os }}
+    
     steps:
       - name: Checkout nim-dnsdisc
         uses: actions/checkout@v2
