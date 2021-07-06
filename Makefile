@@ -9,6 +9,7 @@ BUILD_SYSTEM_DIR := vendor/nimbus-build-system
 .PHONY: \
 	all \
 	deps \
+	testall \
 	update \
 	clean
 
@@ -33,11 +34,19 @@ else # "variables.mk" was included. Business as usual until the end of this file
 # add a default Nim compiler argument
 NIM_PARAMS += -d:release
 
-deps: | deps-common
-	# Have custom deps? Add them above.
+deps: | deps-common dnsdisc.nims
 
 update: | update-common
-	# Do you need to do something extra for this target?
+	rm -rf dnsdisc.nims && \
+		$(MAKE) dnsdisc.nims $(HANDLE_OUTPUT)
+
+test: | deps
+	echo -e "Running: $@" && \
+		$(ENV_SCRIPT) nim test $(NIM_PARAMS) dnsdisc.nims
+
+# symlink
+dnsdisc.nims:
+	ln -s dnsdisc.nimble $@
 
 endif # "variables.mk" was not included
 

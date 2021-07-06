@@ -18,3 +18,14 @@ requires "nim >= 1.2.0",
   "testutils",
   "unittest2",
   "nimcrypto"
+
+# Helper functions
+
+proc test(name: string, params = "-d:chronicles_log_level=DEBUG", lang = "c") =
+  # XXX: When running `> NIM_PARAMS="-d:chronicles_log_level=INFO" make test2`
+  # I expect compiler flag to be overridden, however it stays with whatever is
+  # specified here.
+  exec "nim " & lang & " -r " & params & " tests/" & name & ".nim"
+
+task test, "Build & run all DNS discovery tests":
+  test "all_tests"
