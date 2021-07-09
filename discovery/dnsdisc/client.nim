@@ -1,7 +1,7 @@
 {.push raises: [Defect]}
 
 import
-  std/strformat,
+  std/[sets, strformat],
   chronicles,
   chronos,
   eth/keys,
@@ -12,11 +12,20 @@ import
 export
   tree
 
+## Implementation of DNS-based discovery client protocol, as specified
+## in https://eips.ethereum.org/EIPS/eip-1459
+## 
+## This implementation is loosely based on the Go implementation of EIP-1459
+## at https://github.com/ethereum/go-ethereum/blob/master/p2p/dnsdisc
+
+logScope:
+  topics = "dnsdisc.client"
+
 type
   Client* = object
     ## For now a client contains only a single tree in a single location
     loc*: LinkEntry
-    tree*: var Tree
+    tree*: Tree
   
   ## A Resolver proc takes a DNS domain as argument and
   ## returns the TXT record at that domain
@@ -77,13 +86,44 @@ proc resolveSubtreeEntry*(resolver: Resolver, loc: LinkEntry, subdomain: string)
     
   return ok(res[])
 
-proc resolveAllEntries(rootEntry: RootEntry): ResolveResult[seq[SubtreeEntry]] =
+proc resolveAllEntries*(resolver: Resolver, loc: LinkEntry, rootEntry: RootEntry): Future[seq[SubtreeEntry]] {.async.} =
   ## Resolves all subtree entries at given root
   ## Follows EIP-1459 client protocol
-  ## 
-  ## @TODO implement
   
-  ok(newSeq[SubtreeEntry]())
+  var subtreeEntries: seq[SubtreeEntry]
+  
+  var
+    # Initialise a hash set with the root hashes of ENR and link subtrees
+    hashes = toHashSet([rootEntry.eroot, rootEntry.lroot])
+    i = 1
+
+  while hashes.len > 0 and i <= 100:
+    # Recursively resolve leaf entries and add to return list.
+    # @TODO: Define a better depth limit. 100 was chosen arbitrarily.
+    inc(i)
+
+    let
+      # Resolve and remove random entry from subdomain hashes
+      nextHash = hashes.pop()
+      nextEntry = await resolveSubtreeEntry(resolver, loc, nextHash)
+    
+    if nextEntry.isErr():
+      # @TODO metrics to track missing/failed entries
+      trace "Could not resolve next entry. Continuing.", subdomain=nextHash
+      continue
+    
+    case nextEntry[].kind:
+      of Enr:
+        # Add to return list
+        subtreeEntries.add(nextEntry[])
+      of Link:
+        # Add to return list
+        subtreeEntries.add(nextEntry[])
+      of Branch:
+        # Add branch children to hashes, and continue resolving
+        hashes.incl(nextEntry[].branchEntry.children.toHashSet())
+  
+  return subtreeEntries
 
 proc verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool {.raises: [Defect, ValueError].} =
   ## Verifies the signature on the root against the public key
@@ -141,13 +181,15 @@ proc resolveRoot*(resolver: Resolver, loc: LinkEntry): Future[ResolveResult[Root
     
   return ok(res[])
 
-proc syncTree*(c: Client, resolver: Resolver): Tree {.raises: [Defect, CatchableError].} =
+proc syncTree*(c: var Client, resolver: Resolver): Tree {.raises: [Defect, CatchableError].} =
   ## Synchronises the client tree according to EIP-1459
-  ## 
-  ## @TODO implement - this is a stub
-
-  c.tree = Tree(rootEntry: (waitFor resolveRoot(resolver, c.loc)).tryGet(),
-                entries: resolveAllEntries(c.tree.rootEntry).tryGet())
+  
+  let
+    rootEntry = (waitFor resolveRoot(resolver, c.loc)).tryGet()
+    subtreeEntries = waitFor resolveAllEntries(resolver, c.loc, rootEntry)
+ 
+  c.tree = Tree(rootEntry: rootEntry,
+                entries: subtreeEntries)
 
   return c.tree
 
@@ -155,7 +197,7 @@ proc syncTree*(c: Client, resolver: Resolver): Tree {.raises: [Defect, Catchable
 # Client API #
 ##############
 
-proc getTree*(c: Client, resolver: Resolver): Tree {.raises: [Defect, CatchableError].} =
+proc getTree*(c: var Client, resolver: Resolver): Tree {.raises: [Defect, CatchableError].} =
   ## Main entry point into the client
   ## Returns a synchronised copy of the tree
   ## at the configured client domain
