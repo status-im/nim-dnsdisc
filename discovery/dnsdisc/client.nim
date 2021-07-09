@@ -92,12 +92,15 @@ proc resolveAllEntries*(resolver: Resolver, loc: LinkEntry, rootEntry: RootEntry
   
   var subtreeEntries: seq[SubtreeEntry]
   
-  # Initialise a hash set with the root hashes of ENR and link subtrees
-  var hashes = toHashSet([rootEntry.eroot, rootEntry.lroot])
+  var
+    # Initialise a hash set with the root hashes of ENR and link subtrees
+    hashes = toHashSet([rootEntry.eroot, rootEntry.lroot])
+    i = 1
 
-  while hashes.len > 0:
+  while hashes.len > 0 and i <= 100:
     # Recursively resolve leaf entries and add to return list.
-    # @TODO: Should we add a depth limit here?
+    # @TODO: Define a better depth limit. 100 was chosen arbitrarily.
+    inc(i)
 
     let
       # Resolve and remove random entry from subdomain hashes
