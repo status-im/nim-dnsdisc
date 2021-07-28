@@ -61,7 +61,7 @@ proc toTXTRecord*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
   ok(txtRecord)
 
 proc subdomain*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
-  ## Computes the subdomain has for a subtree entry
+  ## Computes the subdomain hash for a subtree entry
   ## The subdomain name of any entry is the base32
   ## encoding of the (abbreviated) keccak256 hash of
   ## its TXT record content.
