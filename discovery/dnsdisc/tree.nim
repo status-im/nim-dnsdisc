@@ -9,7 +9,7 @@ import
 export keys, enr
 
 ## A collection of utilities for interacting with a list of ENR
-## encoded as a Merkle Tree conisting of DNS TXT records.
+## encoded as a Merkle Tree consisting of DNS TXT records.
 ## 
 ## Discovery via DNS is based on https://eips.ethereum.org/EIPS/eip-1459
 ## 
