@@ -43,7 +43,7 @@ proc toTXTRecord*(rootEntry: RootEntry): BuilderResult[string] =
   except ValueError:
     return err("Failed to format root entry")
 
-  ok(txtRecord)
+  return ok(txtRecord)
 
 proc toTXTRecord*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
   ## Converts a subtree entry into its corresponding
@@ -58,7 +58,7 @@ proc toTXTRecord*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
     of Branch:
       txtRecord = BranchPrefix & subtreeEntry.branchEntry.children.join(",")
   
-  ok(txtRecord)
+  return ok(txtRecord)
 
 proc subdomain*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
   ## Computes the subdomain hash for a subtree entry
@@ -76,7 +76,7 @@ proc subdomain*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
     keccakHash = keccak256.digest(txtRecord.toBytes()).data[0..15]
     subdomain = Base32.encode(keccakHash)
   
-  ok(subdomain)
+  return ok(subdomain)
 
 ###############
 # Builder API #
@@ -111,7 +111,7 @@ proc buildTXT*(tree: Tree, domain: string): BuilderResult[Table[string, string]]
 
     treeRecords[subdomainRes.get() & "." & domain] = txtRecordRes.get()
   
-  ok(treeRecords)
+  return ok(treeRecords)
 
 proc buildSubtree*(entries: seq[SubtreeEntry]): BuilderResult[Subtree] =
   ## Builds a subtree from a given list of entries.
