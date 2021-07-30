@@ -129,14 +129,14 @@ proc verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool {.raises: [D
   ## Verifies the signature on the root against the public key
 
   let
-    sigHash = fmt"{RootPrefix} e={rootEntry.eroot} l={rootEntry.lroot} seq={rootEntry.seqNo}".toBytes()
+    sigHash = hashableContent(rootEntry)
     sig = SignatureNR.fromRaw(rootEntry.signature)
 
   if sig.isOk():
     trace "Verifying signature", sig=repr(sig[]), msg=repr(sigHash), key=repr(pubKey)
-    return keys.verify(sig = sig[],
-                       msg = sigHash,
-                       key = pubKey)
+    return verify(sig = sig[],
+                  msg = sigHash,
+                  key = pubKey)
 
 proc parseAndVerifyRoot(txtRecord: string, loc: LinkEntry): EntryParseResult[RootEntry] {.raises: [Defect, ValueError].} =
   ## Parses root TXT record and verifies signature

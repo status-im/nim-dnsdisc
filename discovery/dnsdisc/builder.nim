@@ -19,7 +19,7 @@ export tree
 
 const
   HashAbbrevSize = 1 + (16*13)/8                 # Size of an encoded hash (plus comma)
-  MaxChildren = 370 div toInt(HashAbbrevSize)    # 13 children
+  MaxChildren* = 370 div toInt(HashAbbrevSize)   # 13 children
 
 type
   BuilderResult*[T] = Result[T, string]
@@ -180,8 +180,24 @@ proc buildSubtree*(entries: seq[SubtreeEntry]): BuilderResult[Subtree] =
   subtree.subtreeEntries = concat(rootsSubtree.subtreeEntries, combinedEntries)
   return ok(subtree)
 
-proc buildTree*(seqNo: uint32, enrRecords: seq[Record], links: seq[string]): BuilderResult[Tree] =
-  ## Builds a tree from given lists of ENR and links
+proc signTree*(tree: var Tree, privateKey: PrivateKey): BuilderResult[void] =
+  ## Signs the tree with the provided private key
+  var
+    sig: Signature
+    rootEntry = tree.rootEntry
+  
+  try:
+    sig = sign(privateKey, hashableContent(rootEntry))
+  except ValueError:
+    return err("Failed to sign root entry")
+
+  tree.rootEntry.signature = @(sig.toRaw())
+  return ok()
+
+proc buildTree*(seqNo: uint32,
+                enrRecords: seq[Record],
+                links: seq[string]): BuilderResult[Tree] =
+  ## Builds a tree from given lists of ENR and links.
   
   var tree: Tree
   
