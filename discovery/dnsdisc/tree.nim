@@ -1,10 +1,11 @@
 {.push raises: [Defect]}
 
 import
-  std/[strscans, strutils, sequtils],
-  stew/[base32, base64, results],
+  std/[strformat, strscans, strutils, sequtils],
+  stew/[base32, base64, byteutils, results],
   eth/keys,
-  eth/p2p/discoveryv5/enr
+  eth/p2p/discoveryv5/enr,
+  nimcrypto/[hash, keccak]
 
 export keys, enr
 
@@ -64,9 +65,9 @@ type
     of Link:
       linkEntry*: LinkEntry
 
-####################
-# Helper functions #
-####################
+##################
+# Util functions #
+##################
 
 proc isValidHash(hashStr: string): bool =
   ## Checks if a hash is valid. It should be the base32
@@ -83,6 +84,10 @@ proc isValidHash(hashStr: string): bool =
     return false
 
   return true
+
+proc hashableContent*(rootEntry: RootEntry): seq[byte] {.raises: [Defect, ValueError].} =
+  # Returns the hashable content of a root entry, used to compute the `sig=` portion
+  return fmt"{RootPrefix} e={rootEntry.eroot} l={rootEntry.lroot} seq={rootEntry.seqNo}".toBytes()
 
 #################
 # Entry parsers #
