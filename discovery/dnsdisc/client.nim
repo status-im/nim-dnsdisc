@@ -1,7 +1,7 @@
 {.push raises: [Defect]}
 
 import
-  std/[sets, strformat],
+  std/[sequtils, sets, strformat],
   chronicles,
   chronos,
   eth/keys,
@@ -29,7 +29,7 @@ type
   
   ## A Resolver proc takes a DNS domain as argument and
   ## returns the TXT record at that domain
-  Resolver* = proc(domain: string): Future[string]
+  Resolver* = proc(domain: string): Future[string] {.gcsafe.}
 
   ResolveResult*[T] = Result[T, string]
 
@@ -64,7 +64,7 @@ proc parseAndVerifySubtreeEntry(txtRecord: string, hashStr: string): EntryParseR
 
   ok(subtreeEntry)
 
-proc resolveSubtreeEntry*(resolver: Resolver, loc: LinkEntry, subdomain: string): Future[ResolveResult[SubtreeEntry]] {.async, raises: [Defect, ValueError, Base32Error].} =
+proc resolveSubtreeEntry*(resolver: Resolver, loc: LinkEntry, subdomain: string): Future[ResolveResult[SubtreeEntry]] {.async, gcsafe, raises: [Defect, ValueError, Base32Error].} =
   ## Resolves subtree entry at given subdomain
   ## Follows EIP-1459 client protocol
 
@@ -125,12 +125,15 @@ proc resolveAllEntries*(resolver: Resolver, loc: LinkEntry, rootEntry: RootEntry
   
   return subtreeEntries
 
-proc verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool {.raises: [Defect, ValueError].} =
+proc verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool =
   ## Verifies the signature on the root against the public key
+  let sig = SignatureNR.fromRaw(rootEntry.signature)
 
-  let
+  var sigHash: seq[byte]
+  try:
     sigHash = hashableContent(rootEntry)
-    sig = SignatureNR.fromRaw(rootEntry.signature)
+  except ValueError:
+    return false
 
   if sig.isOk():
     trace "Verifying signature", sig=repr(sig[]), msg=repr(sigHash), key=repr(pubKey)
@@ -138,7 +141,7 @@ proc verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool {.raises: [D
                   msg = sigHash,
                   key = pubKey)
 
-proc parseAndVerifyRoot(txtRecord: string, loc: LinkEntry): EntryParseResult[RootEntry] {.raises: [Defect, ValueError].} =
+proc parseAndVerifyRoot(txtRecord: string, loc: LinkEntry): EntryParseResult[RootEntry] =
   ## Parses root TXT record and verifies signature
   
   let res = parseRootEntry(txtRecord)
@@ -158,7 +161,7 @@ proc parseAndVerifyRoot(txtRecord: string, loc: LinkEntry): EntryParseResult[Roo
 
   ok(rootEntry)
 
-proc resolveRoot*(resolver: Resolver, loc: LinkEntry): Future[ResolveResult[RootEntry]] {.async, raises: [Defect, ValueError].} =
+proc resolveRoot*(resolver: Resolver, loc: LinkEntry): Future[ResolveResult[RootEntry]] {.async.} =
   ## Resolves root entry at given location (LinkEntry)
   ## Also verifies the root signature and checks seq no
   ## Follows EIP-1459 client protocol
@@ -181,30 +184,56 @@ proc resolveRoot*(resolver: Resolver, loc: LinkEntry): Future[ResolveResult[Root
     
   return ok(res[])
 
-proc syncTree*(c: var Client, resolver: Resolver): Tree {.raises: [Defect, CatchableError].} =
+proc syncTree(resolver: Resolver, rootLocation: LinkEntry): Future[Result[Tree, cstring]] {.async.} =
   ## Synchronises the client tree according to EIP-1459
   
+  let rootEntry = await resolveRoot(resolver, rootLocation)
+
+  if rootEntry.isErr:
+    return err("Failed to resolve root entry")
+
   let
-    rootEntry = (waitFor resolveRoot(resolver, c.loc)).tryGet()
-    subtreeEntries = waitFor resolveAllEntries(resolver, c.loc, rootEntry)
- 
-  c.tree = Tree(rootEntry: rootEntry,
+    subtreeEntries = await resolveAllEntries(resolver, rootLocation, rootEntry.get())
+    tree = Tree(rootEntry: rootEntry.get(),
                 entries: subtreeEntries)
 
-  return c.tree
+  return ok(tree)
 
 ##############
 # Client API #
 ##############
+
+proc init*(T: type Client,
+           locationUrl: string): Result[T, cstring] =
+  ## Initialise client from a DNS node list URL
+  ## with format 'enrtree://<key>@<fqdn>'
+
+  let locLink = parseLinkEntry(locationUrl)
+
+  if locLink.isErr:
+     return err("Failed to create client")
+
+  return ok(Client(loc: locLink.get()))
+
+proc getNodeRecords*(c: Client): seq[Record] =
+  ## Returns a list of node records in the client tree
+
+  try:
+    return c.tree.getNodes().mapIt(it.record)
+  except ValueError:
+    return @[]
 
 proc getTree*(c: var Client, resolver: Resolver): Tree {.raises: [Defect, CatchableError].} =
   ## Main entry point into the client
   ## Returns a synchronised copy of the tree
   ## at the configured client domain
   ## 
-  ## For now the client tree is (only) synchronised whenever accessed
+  ## For now the client tree is (only) synchronised whenever accessed.
+  ## Note that this is a blocking operation to maintain memory safety
+  ## on var Client
   ## 
   ## @TODO periodically sync client tree and return only locally cached version
-  ## @TODO implement - this is a stub
   
-  return syncTree(c, resolver)
+  c.tree = (waitFor syncTree(resolver, c.loc)).tryGet()
+  
+  return c.tree
