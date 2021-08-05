@@ -160,3 +160,29 @@ procSuite "Test DNS Discovery: Client":
       # Root parses as expected, but no entries resolved
       errTree.rootEntry == parseRootEntry("enrtree-root:v1 e=JWXYDBPXYWG6FX3GMDIBFA6CJ4 l=C7HRFPF3BLGF3YR4DY5KX3SMBE seq=1 sig=o908WmNp7LibOfPsr4btQwatZJ5URBr2ZAuxvK4UWHlsB9sUOTJQaGAlLPVAhM__XJesCHxLISo94z5Z2a463gA").tryGet()
       errTree.entries.len == 0
+
+  asyncTest "Get node records":
+    ## This tests getting node records from a client tree
+    
+    let loc = parseLinkEntry("enrtree://AKPYQIUQIL7PSIACI32J7FGZW56E5FKHEFCCOFHILBIMW3M6LWXS2@nodes.example.org").tryGet()
+    
+    var client = Client(loc: loc, tree: Tree())
+    
+    discard client.getTree(resolver)  # This syncs the tree
+
+    # Verify enrs
+    var
+      expEnr1, expEnr2, expEnr3: Record
+    
+    check:
+      expEnr1.fromURI("enr:-HW4QOFzoVLaFJnNhbgMoDXPnOvcdVuj7pDpqRvh6BRDO68aVi5ZcjB3vzQRZH2IcLBGHzo8uUN3snqmgTiE56CH3AMBgmlkgnY0iXNlY3AyNTZrMaECC2_24YYkYHEgdzxlSNKQEnHhuNAbNlMlWJxrJxbAFvA")
+      expEnr2.fromURI("enr:-HW4QAggRauloj2SDLtIHN1XBkvhFZ1vtf1raYQp9TBW2RD5EEawDzbtSmlXUfnaHcvwOizhVYLtr7e6vw7NAf6mTuoCgmlkgnY0iXNlY3AyNTZrMaECjrXI8TLNXU0f8cthpAMxEshUyQlK-AM0PW2wfrnacNI")
+      expEnr3.fromURI("enr:-HW4QLAYqmrwllBEnzWWs7I5Ev2IAs7x_dZlbYdRdMUx5EyKHDXp7AV5CkuPGUPdvbv1_Ms1CPfhcGCvSElSosZmyoqAgmlkgnY0iXNlY3AyNTZrMaECriawHKWdDRk2xeZkrOXBQ0dfMFLHY4eENZwdufn1S1o")
+    
+    let enrs = client.getNodeRecords()
+
+    check:
+      enrs.len == 3
+      enrs.contains(expEnr1)
+      enrs.contains(expEnr2)
+      enrs.contains(expEnr3)
