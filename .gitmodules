@@ -63,3 +63,11 @@
 	url = https://github.com/status-im/nim-serialization.git
 	ignore = untracked
 	branch = master
+[submodule "vendor/nim-confutils"]
+	path = vendor/nim-confutils
+	url = https://github.com/status-im/nim-confutils.git
+	ignore = untracked
+	branch = master
+[submodule "vendor/nim-json-rpc"]
+	path = vendor/nim-json-rpc
+	url = https://github.com/status-im/nim-json-rpc.git
