@@ -40,6 +40,10 @@ update: | update-common
 	rm -rf dnsdisc.nims && \
 		$(MAKE) dnsdisc.nims $(HANDLE_OUTPUT)
 
+creator: | build deps
+	echo -e $(BUILD_MSG) "build/$@" && \
+		$(ENV_SCRIPT) nim creator $(NIM_PARAMS) dnsdisc.nims
+
 test: | deps
 	echo -e "Running: $@" && \
 		$(ENV_SCRIPT) nim test $(NIM_PARAMS) dnsdisc.nims

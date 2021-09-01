@@ -71,7 +71,7 @@ procSuite "Test DNS Discovery: Merkle Tree builder":
       enr1: Record
       enr2: Record
       enr3: Record
-      link = "enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org"
+      link = parseLinkEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org").get()
       seqNo = 1.uint32
     
     check:

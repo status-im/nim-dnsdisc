@@ -196,7 +196,7 @@ proc signTree*(tree: var Tree, privateKey: PrivateKey): BuilderResult[void] =
 
 proc buildTree*(seqNo: uint32,
                 enrRecords: seq[Record],
-                links: seq[string]): BuilderResult[Tree] =
+                links: seq[LinkEntry]): BuilderResult[Tree] =
   ## Builds a tree from given lists of ENR and links.
   
   var tree: Tree
@@ -209,14 +209,7 @@ proc buildTree*(seqNo: uint32,
     linkEntries: seq[SubtreeEntry]
   
   enrEntries = enrRecords.mapIt(SubtreeEntry(kind: Enr, enrEntry: EnrEntry(record: it)))
-
-  for link in links:
-    let parsedLinkRes = parseLinkEntry(link)
-
-    if parsedLinkRes.isErr:
-      return err("Failed to parse link entry: " & parsedLinkRes.error)
-
-    linkEntries.add(SubtreeEntry(kind: Link, linkEntry: parsedLinkRes.get()))
+  linkEntries = links.mapIt(SubtreeEntry(kind: Link, linkEntry: it))
   
   # Build ENR and link subtrees
   
