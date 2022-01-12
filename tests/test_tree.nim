@@ -90,7 +90,7 @@ procSuite "Test DNS Discovery: Merkle Tree":
 
     check:
       entryRes.isOk()
-      $(entryRes[].record) == """(1, id: "v4", ip: 0x7F000001, secp256k1: 0x03CA634CAE0D49ACB401D8A4C6B6FE8C55B70D115BF400769CC1400F3258CD3138, udp: 30303)"""
+      $(entryRes[].record) == """(1, id: "v4", ip: 127.0.0.1, secp256k1: 0x03CA634CAE0D49ACB401D8A4C6B6FE8C55B70D115BF400769CC1400F3258CD3138, udp: 30303)"""
     
     # Invalid cases
     check:
