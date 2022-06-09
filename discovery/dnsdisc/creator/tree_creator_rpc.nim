@@ -1,4 +1,4 @@
-{.push raises: [Defect, CatchableError].}
+{.push raises: [Defect].}
 
 import
   std/tables,
@@ -45,7 +45,8 @@ proc installRpcApiHandlers(initTc: TreeCreator, rpcsrv: RpcServer) {.gcsafe.} =
     let url = tc.getURL().tryGet()
     return url
 
-proc startRpc*(tc: var TreeCreator, rpcIp: ValidIpAddress, rpcPort: Port) =
+proc startRpc*(tc: var TreeCreator, rpcIp: ValidIpAddress, rpcPort: Port)
+  {.raises: [Defect, RpcBindError].} =
   info "Starting RPC server"
   let
     ta = initTAddress(rpcIp, rpcPort)
