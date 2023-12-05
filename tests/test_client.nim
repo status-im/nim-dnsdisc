@@ -11,7 +11,9 @@ procSuite "Test DNS Discovery: Client":
 
   # Suite setup
   # Create sample tree from EIP-1459
-  var treeRecords = initTable[string, string]()
+  var treeRecords {.threadvar.}: Table[string, string]
+
+  treeRecords = initTable[string, string]()
   treeRecords["nodes.example.org"] = "enrtree-root:v1 e=JWXYDBPXYWG6FX3GMDIBFA6CJ4 l=C7HRFPF3BLGF3YR4DY5KX3SMBE seq=1 sig=o908WmNp7LibOfPsr4btQwatZJ5URBr2ZAuxvK4UWHlsB9sUOTJQaGAlLPVAhM__XJesCHxLISo94z5Z2a463gA"
   treeRecords["C7HRFPF3BLGF3YR4DY5KX3SMBE.nodes.example.org"] = "enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org"
   treeRecords["JWXYDBPXYWG6FX3GMDIBFA6CJ4.nodes.example.org"] = "enrtree-branch:2XS2367YHAXJFGLZHVAWLQD4ZY,H4FHT4B454P6UXFD7JCYQ5PWDY,MHTDO6TMUBRIA2XWG5LUDACK24"
@@ -19,8 +21,13 @@ procSuite "Test DNS Discovery: Client":
   treeRecords["H4FHT4B454P6UXFD7JCYQ5PWDY.nodes.example.org"] = "enr:-HW4QAggRauloj2SDLtIHN1XBkvhFZ1vtf1raYQp9TBW2RD5EEawDzbtSmlXUfnaHcvwOizhVYLtr7e6vw7NAf6mTuoCgmlkgnY0iXNlY3AyNTZrMaECjrXI8TLNXU0f8cthpAMxEshUyQlK-AM0PW2wfrnacNI"
   treeRecords["MHTDO6TMUBRIA2XWG5LUDACK24.nodes.example.org"] = "enr:-HW4QLAYqmrwllBEnzWWs7I5Ev2IAs7x_dZlbYdRdMUx5EyKHDXp7AV5CkuPGUPdvbv1_Ms1CPfhcGCvSElSosZmyoqAgmlkgnY0iXNlY3AyNTZrMaECriawHKWdDRk2xeZkrOXBQ0dfMFLHY4eENZwdufn1S1o"
 
-  proc resolver(domain: string): Future[string] {.async.} =
-    return treeRecords[domain]
+  proc resolver(domain: string): Future[string] {.gcsafe, raises: [].} =
+    try:
+      var retFut = newFuture[string]("resolver")
+      retFut.complete(treeRecords[domain])
+      return retFut
+    except:
+      discard
 
   asyncTest "Resolve root":
     ## This tests resolving a root TXT entry at a given domain location,
@@ -101,8 +108,10 @@ procSuite "Test DNS Discovery: Client":
       links.contains(parseLinkEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org").tryGet())
     
     # Invalid case
-    proc invalidResolver(domain: string): Future[string] {.async.} =
-      return ""
+    proc invalidResolver(domain: string): Future[string] {.gcsafe, raises: [].} =
+      var retFuture = newFuture[string]()
+      retFuture.complete("")
+      return retFuture
 
     check:
       # If no entries can be resolved without error, empty set will be returned
