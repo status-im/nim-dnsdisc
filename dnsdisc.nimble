@@ -17,7 +17,8 @@ requires "nim >= 1.2.0",
   "stew",
   "testutils",
   "unittest2",
-  "nimcrypto"
+  "nimcrypto",
+  "results"
 
 # Helper functions
 proc buildBinary(name: string, srcDir = "./", params = "", lang = "c") =
