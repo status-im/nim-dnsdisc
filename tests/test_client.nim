@@ -13,7 +13,6 @@ procSuite "Test DNS Discovery: Client":
   # Create sample tree from EIP-1459
   var treeRecords {.threadvar.}: Table[string, string]
 
-  treeRecords = initTable[string, string]()
   treeRecords["nodes.example.org"] = "enrtree-root:v1 e=JWXYDBPXYWG6FX3GMDIBFA6CJ4 l=C7HRFPF3BLGF3YR4DY5KX3SMBE seq=1 sig=o908WmNp7LibOfPsr4btQwatZJ5URBr2ZAuxvK4UWHlsB9sUOTJQaGAlLPVAhM__XJesCHxLISo94z5Z2a463gA"
   treeRecords["C7HRFPF3BLGF3YR4DY5KX3SMBE.nodes.example.org"] = "enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org"
   treeRecords["JWXYDBPXYWG6FX3GMDIBFA6CJ4.nodes.example.org"] = "enrtree-branch:2XS2367YHAXJFGLZHVAWLQD4ZY,H4FHT4B454P6UXFD7JCYQ5PWDY,MHTDO6TMUBRIA2XWG5LUDACK24"
@@ -103,10 +102,8 @@ procSuite "Test DNS Discovery: Client":
       links.contains(parseLinkEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org").tryGet())
     
     # Invalid case
-    proc invalidResolver(domain: string): Future[string] {.gcsafe, raises: [].} =
-      var retFuture = newFuture[string]()
-      retFuture.complete("")
-      return retFuture
+    proc invalidResolver(domain: string): Future[string] {.async.} =
+      return ""
 
     check:
       # If no entries can be resolved without error, empty set will be returned
