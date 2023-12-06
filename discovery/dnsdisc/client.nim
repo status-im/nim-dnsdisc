@@ -29,7 +29,7 @@ type
   
   ## A Resolver proc takes a DNS domain as argument and
   ## returns the TXT record at that domain
-  Resolver* = proc(domain: string): Future[string] {.gcsafe.}
+  Resolver* = proc(domain: string): Future[string] {.async.}
 
   ResolveResult*[T] = Result[T, string]
 
