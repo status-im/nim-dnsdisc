@@ -21,13 +21,8 @@ procSuite "Test DNS Discovery: Client":
   treeRecords["H4FHT4B454P6UXFD7JCYQ5PWDY.nodes.example.org"] = "enr:-HW4QAggRauloj2SDLtIHN1XBkvhFZ1vtf1raYQp9TBW2RD5EEawDzbtSmlXUfnaHcvwOizhVYLtr7e6vw7NAf6mTuoCgmlkgnY0iXNlY3AyNTZrMaECjrXI8TLNXU0f8cthpAMxEshUyQlK-AM0PW2wfrnacNI"
   treeRecords["MHTDO6TMUBRIA2XWG5LUDACK24.nodes.example.org"] = "enr:-HW4QLAYqmrwllBEnzWWs7I5Ev2IAs7x_dZlbYdRdMUx5EyKHDXp7AV5CkuPGUPdvbv1_Ms1CPfhcGCvSElSosZmyoqAgmlkgnY0iXNlY3AyNTZrMaECriawHKWdDRk2xeZkrOXBQ0dfMFLHY4eENZwdufn1S1o"
 
-  proc resolver(domain: string): Future[string] {.gcsafe, raises: [].} =
-    try:
-      var retFut = newFuture[string]("resolver")
-      retFut.complete(treeRecords[domain])
-      return retFut
-    except:
-      discard
+  proc resolver(domain: string): Future[string] {.async.} =
+    return treeRecords[domain]
 
   asyncTest "Resolve root":
     ## This tests resolving a root TXT entry at a given domain location,
