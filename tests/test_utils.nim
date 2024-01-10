@@ -1,6 +1,6 @@
 import
   std/tables,
-  ../discovery/dnsdisc/tree
+  ../dnsdisc/tree
 
 # Example tree constants, used in multiple tests
 const
@@ -22,7 +22,7 @@ const
 # Create sample tree from EIP-1459
 func initExampleRecords(): Table[string, string] =
   var exampleRecords = initTable[string, string]()
-  
+
   exampleRecords[Domain] = RootTxt
   exampleRecords[LinkSubdomain & "." & Domain] = LinkTxt
   exampleRecords[BranchSubdomain & "." & Domain] = BranchTxt
@@ -33,15 +33,15 @@ func initExampleRecords(): Table[string, string] =
   return exampleRecords
 
 # Exported example tree variables, used in multiple tests
-let 
+let
   exampleRecords* = initExampleRecords()
-  
+
   exampleRoot* = parseRootEntry(RootTxt).get()
-  
+
   exampleLink* = parseSubtreeEntry(LinkTxt).get()
-  
+
   exampleBranch* = parseSubtreeEntry(BranchTxt).get()
-  
+
   exampleEnr1* = parseSubtreeEntry(Enr1Txt).get()
   exampleEnr2* = parseSubtreeEntry(Enr2Txt).get()
   exampleEnr3* = parseSubtreeEntry(Enr3Txt).get()
