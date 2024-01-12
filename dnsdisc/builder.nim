@@ -11,16 +11,16 @@ export tree
 ## A collection of utilities for constructing a Merkle Tree
 ## encoding a list of ENR and link entries.
 ## The tree consists of DNS TXT records.
-## 
+##
 ## Discovery via DNS is based on https://eips.ethereum.org/EIPS/eip-1459
-## 
+##
 ## This implementation is based on the Go implementation of EIP-1459
 ## at https://github.com/ethereum/go-ethereum/blob/master/p2p/dnsdisc
 
 
 ## How we determine MaxChildren: (Adapted from go-ethereum)
 ## https://github.com/ethereum/go-ethereum/blob/4d88974864c3ee84a24b1088064162b8dbab8ad5/p2p/dnsdisc/tree.go#L116-L146
-## 
+##
 ## We want to keep the UDP size below 512 bytes. The UDP size is roughly:
 ## UDP length = 8 + UDP payload length ( 229 )
 ## UPD Payload length:
@@ -87,7 +87,7 @@ proc toTXTRecord*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
       txtRecord = LinkPrefix & subtreeEntry.linkEntry.str
     of Branch:
       txtRecord = BranchPrefix & subtreeEntry.branchEntry.children.join(",")
-  
+
   return ok(txtRecord)
 
 proc subdomain*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
@@ -96,16 +96,16 @@ proc subdomain*(subtreeEntry: SubtreeEntry): BuilderResult[string] =
   ## encoding of the (abbreviated) keccak256 hash of
   ## its TXT record content.
   var txtRecord: string
-  
+
   try:
     txtRecord = subtreeEntry.toTXTRecord().tryGet()
   except ValueError:
     return err("Failed to format subtree entry")
-  
+
   let
     keccakHash = keccak256.digest(txtRecord.toBytes()).data[0..15]
     subdomain = Base32.encode(keccakHash)
-  
+
   return ok(subdomain)
 
 ###############
@@ -132,15 +132,15 @@ proc buildTXT*(tree: Tree, domain: string): BuilderResult[Table[string, string]]
     let
       subdomainRes = subtreeEntry.subdomain()
       txtRecordRes = subtreeEntry.toTXTRecord()
-    
+
     if subdomainRes.isErr:
       return err("Failed to build: " & subdomainRes.error)
-    
+
     if txtRecordRes.isErr:
       return err("Failed to build: " & txtRecordRes.error)
 
     treeRecords[subdomainRes.get() & "." & domain] = txtRecordRes.get()
-  
+
   return ok(treeRecords)
 
 proc buildSubtree*(entries: seq[SubtreeEntry]): BuilderResult[Subtree] =
@@ -152,7 +152,7 @@ proc buildSubtree*(entries: seq[SubtreeEntry]): BuilderResult[Subtree] =
     # Single entry is its own root
     subtree.subtreeRoot = entries[0]
     return ok(subtree)
-  
+
   if entries.len() <= MaxChildren:
     # Entries will fit in single branch
     # Determine subdomain hashes
@@ -160,18 +160,18 @@ proc buildSubtree*(entries: seq[SubtreeEntry]): BuilderResult[Subtree] =
 
     for entry in entries:
       let subdomainRes = entry.subdomain()
-      
+
       if subdomainRes.isErr:
         return err("Failed to build subtree: " & subdomainRes.error)
-      
+
       children.add(subdomainRes.get())
-    
+
     # Return branch as subtree
     subtree.subtreeRoot = SubtreeEntry(kind: Branch,
                                        branchEntry: BranchEntry(children: children))
     subtree.subtreeEntries = entries
     return ok(subtree)
-  
+
   ## Several branches required. The algorithm is now:
   ## 1. Create a branch subtree for each slice of entries that fits within MaxChildren
   ## 2. Create a subtree consisting of the subtree root entries of all branches in (1)
@@ -202,9 +202,9 @@ proc buildSubtree*(entries: seq[SubtreeEntry]): BuilderResult[Subtree] =
   let rootsSubtreeRes = buildSubtree(combinedRoots)
   if rootsSubtreeRes.isErr:
     return err(rootsSubtreeRes.error)
-  
+
   let rootsSubtree = rootsSubtreeRes.get()
-  
+
   # Return combined subtree
   subtree.subtreeRoot = rootsSubtree.subtreeRoot
   subtree.subtreeEntries = concat(rootsSubtree.subtreeEntries, combinedEntries)
@@ -215,7 +215,7 @@ proc signTree*(tree: var Tree, privateKey: PrivateKey): BuilderResult[void] =
   var
     sig: Signature
     rootEntry = tree.rootEntry
-  
+
   try:
     sig = sign(privateKey, hashableContent(rootEntry))
   except ValueError:
@@ -228,21 +228,21 @@ proc buildTree*(seqNo: uint32,
                 enrRecords: seq[Record],
                 links: seq[LinkEntry]): BuilderResult[Tree] =
   ## Builds a tree from given lists of ENR and links.
-  
+
   var tree: Tree
-  
+
   # @TODO verify ENR here - should be signed
 
   # Convert ENR and links to subtree sequences
   var
     enrEntries: seq[SubtreeEntry]
     linkEntries: seq[SubtreeEntry]
-  
+
   enrEntries = enrRecords.mapIt(SubtreeEntry(kind: Enr, enrEntry: EnrEntry(record: it)))
   linkEntries = links.mapIt(SubtreeEntry(kind: Link, linkEntry: it))
-  
+
   # Build ENR and link subtrees
-  
+
   let enrSubtreeRes = buildSubtree(enrEntries)
 
   if enrSubtreeRes.isErr:
@@ -257,21 +257,21 @@ proc buildTree*(seqNo: uint32,
   let
     erootRes = enrSubtreeRes.get().subtreeRoot.subdomain()
     lrootRes = linkSubtreeRes.get().subtreeRoot.subdomain()
-  
+
   if erootRes.isErr or lrootRes.isErr:
     return err("Failed to determine subtree root subdomain")
 
   let rootEntry = RootEntry(eroot: erootRes.get(),
                             lroot: lrootRes.get(),
                             seqNo: seqNo)
-  
+
   # Combine subtrees
   let entries = concat(@[enrSubtreeRes.get().subtreeRoot,
                          linkSubtreeRes.get().subtreeRoot],
                        enrSubtreeRes.get().subtreeEntries,
                        linkSubtreeRes.get().subtreeEntries)
-  
+
   tree = Tree(rootEntry: rootEntry,
               entries: entries)
-  
+
   return ok(tree)

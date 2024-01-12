@@ -13,12 +13,12 @@ logScope:
 
 proc installRpcApiHandlers(initTc: TreeCreator, rpcsrv: RpcServer) {.gcsafe.} =
   var tc = initTc # Create a mutable copy, to maintain memory safety
-  
+
   rpcsrv.rpc("post_domain") do(domain: string) -> bool:
     debug "post_domain"
     tc.setDomain(domain)
     return true
-  
+
   rpcsrv.rpc("get_domain") do() -> Option[string]:
     debug "get_domain"
     return tc.getDomain()
@@ -51,7 +51,7 @@ proc startRpc*(tc: var TreeCreator, rpcIp: ValidIpAddress, rpcPort: Port)
   let
     ta = initTAddress(rpcIp, rpcPort)
     rpcServer = newRpcHttpServer([ta])
-  
+
   installRpcApiHandlers(tc, rpcServer)
 
   rpcServer.start()

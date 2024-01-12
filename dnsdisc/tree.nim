@@ -11,9 +11,9 @@ export keys, enr
 
 ## A collection of utilities for interacting with a list of ENR
 ## encoded as a Merkle Tree consisting of DNS TXT records.
-## 
+##
 ## Discovery via DNS is based on https://eips.ethereum.org/EIPS/eip-1459
-## 
+##
 ## This implementation is based on the Go implementation of EIP-1459
 ## at https://github.com/ethereum/go-ethereum/blob/master/p2p/dnsdisc
 
@@ -39,23 +39,23 @@ type
     lroot*: string # Root of subtree containing links to other trees
     seqNo*: uint32 # Sequence number, increased with every update
     signature*: seq[byte] # Root entry signature
-  
+
   BranchEntry* = object
     children*: seq[string] # Hashes pointing to the subdomains of other subtree entries
-  
+
   EnrEntry* = object
     record*: enr.Record # Ethereum node record as per EIP-778
-  
+
   LinkEntry* = object
     str*: string  # String representation of subdomain, i.e. <key>@<domain>
     pubKey*: PublicKey # Public key that signed the list at this link
     domain*: string
-  
+
   SubtreeEntryKind* = enum
     Branch
     Enr
     Link
-  
+
   SubtreeEntry* = object
     case kind*: SubtreeEntryKind
     of Branch:
@@ -77,7 +77,7 @@ proc isValidHash(hashStr: string): bool =
   if (decodedLen > 32) or (hashStr.contains("\n\r")):
     # @TODO: also check minimum hash size
     return false
-  
+
   try:
     discard Base32.decode(hashStr)
   except Base32Error:
@@ -96,7 +96,7 @@ proc hashableContent*(rootEntry: RootEntry): seq[byte] {.raises: [Defect, ValueE
 proc parseRootEntry*(entry: string): EntryParseResult[RootEntry] =
   ## Parses a root entry in the format
   ## 'enrtree-root:v1 e=<enr-root> l=<link-root> seq=<sequence-number> sig=<signature>'
-  
+
   var
     eroot, lroot, sigstr: string
     seqNo: int
@@ -111,7 +111,7 @@ proc parseRootEntry*(entry: string): EntryParseResult[RootEntry] =
 
   if (not isValidHash(eroot)) or (not isValidHash(lroot)):
     return err("Invalid child")
-  
+
   try:
     signature = Base64Url.decode(sigstr)
   except Base64Error:
@@ -125,11 +125,11 @@ proc parseRootEntry*(entry: string): EntryParseResult[RootEntry] =
 proc parseBranchEntry*(entry: string): EntryParseResult[BranchEntry] =
   ## Parses a branch entry in the format
   ## 'enrtree-branch:<h₁>,<h₂>,...,<hₙ>'
-  
+
   var
     hashesSubstr: string
     hashes: seq[string]
-  
+
   try:
     if not scanf(entry, BranchPrefix & "$+", hashesSubstr):
       # @TODO better error handling
@@ -142,17 +142,17 @@ proc parseBranchEntry*(entry: string): EntryParseResult[BranchEntry] =
       return err("Invalid child")
 
     hashes.add(hash)
-  
+
   ok(BranchEntry(children: hashes))
 
 proc parseEnrEntry*(entry: string): EntryParseResult[EnrEntry] =
   ## Parses an enr entry in the format 'enr:<node-record>'.
   ## <node-record> is the EIP-1459 text encoding of the node record
-  
+
   var
     nodeStr: string
     record: Record
-  
+
   try:
     if not scanf(entry, EnrPrefix & "$+", nodeStr):
       # @TODO better error handling
@@ -168,12 +168,12 @@ proc parseEnrEntry*(entry: string): EntryParseResult[EnrEntry] =
 proc parseLinkEntry*(entry: string): EntryParseResult[LinkEntry] =
   ## Parses a link entry in the format
   ## 'enrtree://<key>@<fqdn>'
-  
+
   var
     keyStr, fqdnStr: string
     rawKey: seq[byte]
     key: PublicKey
-  
+
   try:
     if not scanf(entry, LinkPrefix & "$+@$+", keyStr, fqdnStr):
       # @TODO better error handling
@@ -197,7 +197,7 @@ proc parseLinkEntry*(entry: string): EntryParseResult[LinkEntry] =
 
 proc parseSubtreeEntry*(entry: string): EntryParseResult[SubtreeEntry] =
   var subtreeEntry: SubtreeEntry
-  
+
   try:
     if entry.startsWith(BranchPrefix):
       subtreeEntry = SubtreeEntry(kind: Branch, branchEntry: parseBranchEntry(entry).tryGet())
@@ -218,12 +218,12 @@ proc parseSubtreeEntry*(entry: string): EntryParseResult[SubtreeEntry] =
 
 proc getNodes*(tree: Tree): seq[EnrEntry] {.raises: [Defect, ValueError]} =
   ## Returns a list of node entries in the tree
-  
+
   return tree.entries.filterIt(it.kind == Enr)
                      .mapIt(it.enrEntry)
 
 proc getLinks*(tree: Tree): seq[LinkEntry] {.raises: [Defect, ValueError]} =
   ## Returns a list of link entries in the tree
-  
+
   return tree.entries.filterIt(it.kind == Link)
                      .mapIt(it.linkEntry)

@@ -25,7 +25,7 @@ type
     links: seq[LinkEntry]
     tree: Option[Tree]
     isUpdated: bool
-  
+
   CreatorResult*[T] = Result[T, string]
 
 ##############
@@ -73,7 +73,7 @@ proc addLinkEntries*(tc: var TreeCreator, links: seq[string]): bool =
     else:
       debug "Failed to parse link entry", link=link
       isSuccess = false
-    
+
   return isSuccess
 
 proc getLinkEntries*(tc: TreeCreator): seq[LinkEntry] =
@@ -82,7 +82,7 @@ proc getLinkEntries*(tc: TreeCreator): seq[LinkEntry] =
 proc buildTree*(tc: var TreeCreator): CreatorResult[Tree] =
   ## Attempts to build the tree, if it has not been built yet
   ## or if it has since been updated
-  
+
   debug "attempting to build tree"
 
   if tc.tree.isSome() and not tc.isUpdated:
@@ -95,17 +95,17 @@ proc buildTree*(tc: var TreeCreator): CreatorResult[Tree] =
   if tc.enrRecords.len == 0 and tc.links.len == 0:
     # No entries to encode
     return err("no enr or link entries configured")
-  
+
   # Build tree from existing entries. Increase seq no as per EIP-1459.
   tc.seqNo = tc.seqNo + 1
   let treeRes = buildTree(tc.seqNo, tc.enrRecords, tc.links)
-  
+
   if treeRes.isErr():
     return err(treeRes.error)
 
   # Sign tree
   tree = treeRes[]
-  
+
   let signRes = tree.signTree(tc.privateKey)
 
   if signRes.isErr():
@@ -124,14 +124,14 @@ proc getTXTs*(tc: var TreeCreator): CreatorResult[Table[string, string]] =
     return err("Failed to create: no domain configured")
 
   # Attempt to build tree, if necessary
-  let buildRes = tc.buildTree() 
+  let buildRes = tc.buildTree()
 
   if buildRes.isErr():
     return err("Failed to create: " & buildRes.error)
-  
+
   # Extract TXT records
   let txtRes = tc.tree.get().buildTXT(tc.domain.get())
-  
+
   if txtRes.isErr():
     return err("Failed to create: " & txtRes.error)
 
@@ -142,17 +142,17 @@ proc getPublicKey*(tc: TreeCreator): string =
   ## in base32 encoding. This forms the "username"
   ## part of the tree location URL as per
   ## https://eips.ethereum.org/EIPS/eip-1459
-  
+
   Base32.encode(tc.privateKey.toPublicKey().toRawCompressed())
 
 proc getURL*(tc: TreeCreator): CreatorResult[string] =
-  ## Returns the tree URL in the format 
+  ## Returns the tree URL in the format
   ## 'enrtree://<public_key>@<domain>' as per
   ## https://eips.ethereum.org/EIPS/eip-1459
-  
+
   if tc.domain.isNone():
     return err("Failed to create: no domain configured")
-  
+
   return ok(LinkPrefix & tc.getPublicKey & "@" & tc.domain.get())
 
 ##########################
@@ -164,7 +164,7 @@ proc init*(T: type TreeCreator,
            domain = none(string),
            enrRecords: seq[Record] = @[],
            links: seq[LinkEntry] = @[]): T =
-  
+
   let treeCreator = TreeCreator(
     privateKey: privateKey,
     domain: domain,
@@ -183,19 +183,19 @@ when isMainModule:
     stew/shims/net as stewNet,
     ./tree_creator_conf,
     ./tree_creator_rpc
-  
+
   logScope:
     topics = "tree.creator.setup"
-  
+
   let
     conf = TreeCreatorConf.load()
-  
+
   # 1/2 Initialise TreeCreator
   debug "1/2 initialising"
 
   let domain = if conf.domain == "": none(string)
                else: some(conf.domain)
-  
+
   var treeCreator = TreeCreator.init(conf.privateKey,
                                      domain,
                                      conf.enrRecords,
