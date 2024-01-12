@@ -13,12 +13,12 @@ type
       desc: "Tree creator private key as 64 char hex string.",
       defaultValue: PrivateKey.random(newRng()[])
       name: "private-key" }: PrivateKey
-    
+
     domain* {.
       desc: "Fully qualified domain name for the tree root entry",
       defaultValue: ""
       name: "domain" }: string
-    
+
     enrRecords* {.
       desc: "Discoverable ENR entry in ENR text encoded format. Argument may be repeated."
       name: "enr-record" }: seq[Record]
@@ -26,7 +26,7 @@ type
     links* {.
       desc: "Discoverable link entry in link entry format. Argument may be repeated."
       name: "link" }: seq[LinkEntry]
-    
+
     ## JSON-RPC config
 
     rpcAddress* {.
@@ -66,7 +66,7 @@ proc completeCmdArg*(T: type enr.Record, val: TaintedString): seq[string] =
 
 proc parseCmdArg*(T: type LinkEntry, p: TaintedString): T =
   try:
-    let linkEntry = parseLinkEntry(string(p)).tryGet()  
+    let linkEntry = parseLinkEntry(string(p)).tryGet()
     return linkEntry
   except CatchableError:
     raise newException(ConfigurationError, "Invalid link entry")
