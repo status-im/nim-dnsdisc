@@ -4,12 +4,12 @@ import
   chronos,
   std/[sequtils, strformat, tables],
   testutils/unittests,
-  ../discovery/dnsdisc/builder,
+  ../dnsdisc/builder,
   ./test_utils
 
 procSuite "Test DNS Discovery: Merkle Tree builder":
   # Test tree entries:
-  
+
   asyncTest "Create TXT records":
     check:
       # Can convert (back) to TXT record
@@ -17,7 +17,7 @@ procSuite "Test DNS Discovery: Merkle Tree builder":
       exampleEnr1.toTXTRecord().get() == Enr1Txt
       exampleLink.toTXTRecord().get() == LinkTxt
       exampleBranch.toTXTRecord().get() == BranchTxt
-  
+
   asyncTest "Determine subdomain":
     check:
       # Successfully compute subdomain hash for each entry
@@ -29,7 +29,7 @@ procSuite "Test DNS Discovery: Merkle Tree builder":
     check:
       # Successfully build all TXT records from example tree
       exampleTree.buildTXT("nodes.example.org").get() == exampleRecords
-  
+
   asyncTest "Build subtree entries":
     # Test subtree from single leaf entry
     let subtreeLeaf = buildSubtree(@[parseSubtreeEntry(Enr1Txt).get()])
@@ -48,13 +48,13 @@ procSuite "Test DNS Discovery: Merkle Tree builder":
       subtreeSingle[].subtreeRoot.kind == Branch
       subtreeSingle[].subtreeRoot.branchEntry.children == @[Enr1Subdomain, Enr2Subdomain, Enr3Subdomain]
       subtreeSingle[].subtreeEntries.len == 3
-    
+
     # Test subtree with multiple branches-of-branches
     var entries: seq[SubtreeEntry]
     for i in 1..(MaxChildren*MaxChildren):
       # We need at least MaxChildren branch entries holding MaxChildren leaf nodes
       entries.add(parseSubtreeEntry(Enr1Txt).get())
-    
+
     let
       subtreeMultiple = buildSubtree(entries)
       expectedLeafCount = MaxChildren*MaxChildren
@@ -73,7 +73,7 @@ procSuite "Test DNS Discovery: Merkle Tree builder":
       enr3: Record
       link = parseLinkEntry("enrtree://AM5FCQLWIZX2QFPNJAP7VUERCCRNGRHWZG3YYHIUV7BVDQ5FDPRT2@morenodes.example.org").get()
       seqNo = 1.uint32
-    
+
     check:
       enr1.fromBase64("-HW4QOFzoVLaFJnNhbgMoDXPnOvcdVuj7pDpqRvh6BRDO68aVi5ZcjB3vzQRZH2IcLBGHzo8uUN3snqmgTiE56CH3AMBgmlkgnY0iXNlY3AyNTZrMaECC2_24YYkYHEgdzxlSNKQEnHhuNAbNlMlWJxrJxbAFvA")
       enr2.fromBase64("-HW4QAggRauloj2SDLtIHN1XBkvhFZ1vtf1raYQp9TBW2RD5EEawDzbtSmlXUfnaHcvwOizhVYLtr7e6vw7NAf6mTuoCgmlkgnY0iXNlY3AyNTZrMaECjrXI8TLNXU0f8cthpAMxEshUyQlK-AM0PW2wfrnacNI")
@@ -93,7 +93,7 @@ procSuite "Test DNS Discovery: Merkle Tree builder":
       tree[].entries.filterIt(it.kind == Branch).len == 1
       tree[].getNodes().len == 3
       tree[].getLinks().len == 1
-  
+
   asyncTest "Sign tree":
     let
       secKeyHex = "58d23b55bc9cdce1f18c2500f40ff4ab7245df9a89505e9b1fa4851f623d241d"

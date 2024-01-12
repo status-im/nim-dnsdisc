@@ -37,7 +37,7 @@ proc test(name: string, params = "-d:chronicles_log_level=DEBUG", lang = "c") =
   exec "nim " & lang & " -r " & params & " tests/" & name & ".nim"
 
 task creator, "Build DNS discovery tree creator":
-  buildBinary "tree_creator", "discovery/dnsdisc/creator/", "-d:chronicles_log_level=DEBUG -d:chronosStrictException"
+  buildBinary "tree_creator", "dnsdisc/creator/", "-d:chronicles_log_level=DEBUG -d:chronosStrictException"
 
 task test, "Build & run all DNS discovery tests":
   test "all_tests"
