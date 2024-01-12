@@ -6,12 +6,14 @@ import
   json_rpc/rpcserver,
   stew/shims/net,
   stew/results,
-  ./tree_creator
+  ./tree_creator,
+  json_serialization/std/[options, tables]
 
 logScope:
   topics = "tree.creator.rpc"
 
-proc installRpcApiHandlers(initTc: TreeCreator, rpcsrv: RpcServer) {.gcsafe.} =
+proc installRpcApiHandlers(initTc: TreeCreator, rpcsrv: RpcServer)
+  {.gcsafe, raises: [CatchableError].} =
   var tc = initTc # Create a mutable copy, to maintain memory safety
 
   rpcsrv.rpc("post_domain") do(domain: string) -> bool:
@@ -46,7 +48,7 @@ proc installRpcApiHandlers(initTc: TreeCreator, rpcsrv: RpcServer) {.gcsafe.} =
     return url
 
 proc startRpc*(tc: var TreeCreator, rpcIp: ValidIpAddress, rpcPort: Port)
-  {.raises: [Defect, RpcBindError].} =
+  {.raises: [Defect, RpcBindError, CatchableError].} =
   info "Starting RPC server"
   let
     ta = initTAddress(rpcIp, rpcPort)
