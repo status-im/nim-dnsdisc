@@ -1,4 +1,4 @@
-{.push raises: [Defect]}
+{.push raises: []}
 
 import
   std/[sequtils, sets, strformat],
@@ -40,7 +40,7 @@ const
 # Tree sync functions #
 #######################
 
-proc parseAndVerifySubtreeEntry(txtRecord: string, hashStr: string): EntryParseResult[SubtreeEntry] {.raises: [Defect, ValueError, Base32Error].} =
+proc parseAndVerifySubtreeEntry(txtRecord: string, hashStr: string): EntryParseResult[SubtreeEntry] {.raises: [ValueError, Base32Error].} =
   ## Parses subtree TXT entry and verifies that it matches the hash
 
   let res = parseSubtreeEntry(txtRecord)
@@ -64,7 +64,7 @@ proc parseAndVerifySubtreeEntry(txtRecord: string, hashStr: string): EntryParseR
 
   ok(subtreeEntry)
 
-proc resolveSubtreeEntry*(resolver: Resolver, loc: LinkEntry, subdomain: string): Future[ResolveResult[SubtreeEntry]] {.async, gcsafe, raises: [Defect, ValueError, Base32Error].} =
+proc resolveSubtreeEntry*(resolver: Resolver, loc: LinkEntry, subdomain: string): Future[ResolveResult[SubtreeEntry]] {.async, gcsafe, raises: [ValueError, Base32Error].} =
   ## Resolves subtree entry at given subdomain
   ## Follows EIP-1459 client protocol
 
@@ -223,7 +223,7 @@ proc getNodeRecords*(c: Client): seq[Record] =
   except ValueError:
     return @[]
 
-proc getTree*(c: var Client, resolver: Resolver): Tree {.raises: [Defect, CatchableError].} =
+proc getTree*(c: var Client, resolver: Resolver): Tree {.raises: [CatchableError].} =
   ## Main entry point into the client
   ## Returns a synchronised copy of the tree
   ## at the configured client domain

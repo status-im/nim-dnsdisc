@@ -1,4 +1,4 @@
-{.push raises: [Defect]}
+{.push raises: []}
 
 import
   std/[strformat, strscans, strutils, sequtils],
@@ -85,7 +85,7 @@ proc isValidHash(hashStr: string): bool =
 
   return true
 
-proc hashableContent*(rootEntry: RootEntry): seq[byte] {.raises: [Defect, ValueError].} =
+proc hashableContent*(rootEntry: RootEntry): seq[byte] {.raises: [ValueError].} =
   # Returns the hashable content of a root entry, used to compute the `sig=` portion
   return fmt"{RootPrefix} e={rootEntry.eroot} l={rootEntry.lroot} seq={rootEntry.seqNo}".toBytes()
 
@@ -216,13 +216,13 @@ proc parseSubtreeEntry*(entry: string): EntryParseResult[SubtreeEntry] =
 # Tree accessors #
 ##################
 
-proc getNodes*(tree: Tree): seq[EnrEntry] {.raises: [Defect, ValueError]} =
+proc getNodes*(tree: Tree): seq[EnrEntry] {.raises: [ValueError]} =
   ## Returns a list of node entries in the tree
 
   return tree.entries.filterIt(it.kind == Enr)
                      .mapIt(it.enrEntry)
 
-proc getLinks*(tree: Tree): seq[LinkEntry] {.raises: [Defect, ValueError]} =
+proc getLinks*(tree: Tree): seq[LinkEntry] {.raises: [ValueError]} =
   ## Returns a list of link entries in the tree
 
   return tree.entries.filterIt(it.kind == Link)

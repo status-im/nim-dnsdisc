@@ -1,4 +1,4 @@
-{.push raises: [Defect]}
+{.push raises: []}
 
 import
   std/[sequtils, strformat, strutils, tables],

@@ -1,4 +1,4 @@
-{.push raises: [Defect]}
+{.push raises: []}
 
 ## A utility module to create a Merkle tree encoding
 ## a list of ENR and link entries. This is a standalone
@@ -10,7 +10,7 @@ import
   chronos,
   chronicles,
   stew/base32,
-  stew/results,
+  results,
   ../builder
 
 logScope:
