@@ -2,7 +2,7 @@ import
   confutils, confutils/defs, confutils/std/net,
   eth/p2p/discoveryv5/enr,
   eth/keys,
-  stew/results,
+  results,
   ../tree
 
 type

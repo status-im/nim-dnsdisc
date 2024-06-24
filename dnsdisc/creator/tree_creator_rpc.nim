@@ -1,11 +1,11 @@
-{.push raises: [Defect].}
+{.push raises: [].}
 
 import
   std/tables,
   chronicles,
   json_rpc/rpcserver,
   stew/shims/net,
-  stew/results,
+  results,
   ./tree_creator,
   json_serialization/std/[options, tables]
 
@@ -48,7 +48,7 @@ proc installRpcApiHandlers(initTc: TreeCreator, rpcsrv: RpcServer)
     return url
 
 proc startRpc*(tc: var TreeCreator, rpcIp: ValidIpAddress, rpcPort: Port)
-  {.raises: [Defect, RpcBindError, CatchableError].} =
+  {.raises: [RpcBindError, CatchableError].} =
   info "Starting RPC server"
   let
     ta = initTAddress(rpcIp, rpcPort)
