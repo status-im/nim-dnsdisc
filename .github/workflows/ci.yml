@@ -14,9 +14,10 @@ jobs:
           - NPROC: 2
             MAKEFLAGS: "-j${NPROC}"
             NIMFLAGS: "--parallelBuild:${NPROC}"
+        branch: [version-1-6, version-2-0]
         os: [ubuntu-latest, macos-latest]
     
-    name: '${{ matrix.os }}'
+    name: '${{ matrix.os }} (Nim ${{ matrix.branch }})'
     runs-on: ${{ matrix.os }}
     
     steps:
@@ -36,5 +37,13 @@ jobs:
           path: vendor/nimbus-build-system/vendor/Nim/bin
           key: ${{ runner.os }}-${{ matrix.env.NPROC }}-nim-${{ hashFiles('.gitmodules') }}
 
+      - name: Build the Nim compiler
+        run: |
+          curl -O -L -s -S https://raw.githubusercontent.com/status-im/nimbus-build-system/master/scripts/build_nim.sh
+          env MAKE="make -j${NPROC}" CC=gcc NIM_COMMIT=${{ matrix.branch }} bash build_nim.sh nim csources dist/nimble NimBinaries
+          echo '${{ github.workspace }}/nim/bin' >> $GITHUB_PATH
+
       - name: Run tests
-        run: make test
+        run: |
+          nim --version
+          make test
