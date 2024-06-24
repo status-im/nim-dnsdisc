@@ -1,0 +1,2 @@
+--styleCheck:usages
+--styleCheck:error
