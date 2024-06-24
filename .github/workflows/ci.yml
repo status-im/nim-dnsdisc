@@ -32,10 +32,10 @@ jobs:
         run: git submodule update --init --recursive
 
       - name: Cache nim
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: vendor/nimbus-build-system/vendor/Nim/bin
-          key: ${{ runner.os }}-${{ matrix.env.NPROC }}-nim-${{ hashFiles('.gitmodules') }}
+          key: ${{ runner.os }}-${{ matrix.env.NPROC }}-${{ matrix.branch }}-nim-${{ hashFiles('.gitmodules') }}
 
       - name: Build the Nim compiler
         run: |
@@ -46,4 +46,5 @@ jobs:
       - name: Run tests
         run: |
           nim --version
-          make test
+          make NIM_FLAGS="--mm:refc" test
+          make NIM_FLAGS="--mm:orc" test
