@@ -1,6 +1,4 @@
-import
-  std/tables,
-  ../dnsdisc/tree
+import std/tables
 
 # Example tree constants, used in multiple tests
 const
@@ -20,7 +18,7 @@ const
   Enr3Txt* = "enr:-HW4QLAYqmrwllBEnzWWs7I5Ev2IAs7x_dZlbYdRdMUx5EyKHDXp7AV5CkuPGUPdvbv1_Ms1CPfhcGCvSElSosZmyoqAgmlkgnY0iXNlY3AyNTZrMaECriawHKWdDRk2xeZkrOXBQ0dfMFLHY4eENZwdufn1S1o"
 
 # Create sample tree from EIP-1459
-func initExampleRecords(): Table[string, string] =
+func initExampleRecords*(): Table[string, string] =
   var exampleRecords = initTable[string, string]()
 
   exampleRecords[Domain] = RootTxt
@@ -30,25 +28,4 @@ func initExampleRecords(): Table[string, string] =
   exampleRecords[Enr2Subdomain & "." & Domain] = Enr2Txt
   exampleRecords[Enr3Subdomain & "." & Domain] = Enr3Txt
 
-  return exampleRecords
-
-# Exported example tree variables, used in multiple tests
-let
-  exampleRecords* = initExampleRecords()
-
-  exampleRoot* = parseRootEntry(RootTxt).get()
-
-  exampleLink* = parseSubtreeEntry(LinkTxt).get()
-
-  exampleBranch* = parseSubtreeEntry(BranchTxt).get()
-
-  exampleEnr1* = parseSubtreeEntry(Enr1Txt).get()
-  exampleEnr2* = parseSubtreeEntry(Enr2Txt).get()
-  exampleEnr3* = parseSubtreeEntry(Enr3Txt).get()
-
-  exampleTree* = Tree(rootEntry: exampleRoot,
-                      entries: @[exampleLink,
-                                 exampleBranch,
-                                 exampleEnr1,
-                                 exampleEnr2,
-                                 exampleEnr3])
+  exampleRecords

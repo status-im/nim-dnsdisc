@@ -1,11 +1,10 @@
-{.push raises: []}
+{.push raises: [].}
 
 import
   std/[strformat, strscans, strutils, sequtils],
   stew/[base32, base64, byteutils, results],
   eth/keys,
-  eth/p2p/discoveryv5/enr,
-  nimcrypto/[hash, keccak]
+  eth/p2p/discoveryv5/enr
 
 export keys, enr
 
@@ -69,7 +68,7 @@ type
 # Util functions #
 ##################
 
-proc isValidHash(hashStr: string): bool =
+func isValidHash(hashStr: string): bool =
   ## Checks if a hash is valid. It should be the base32
   ## encoding of an abbreviated keccak256 hash.
   let decodedLen = Base32.decodedLength(hashStr.len())
@@ -85,7 +84,7 @@ proc isValidHash(hashStr: string): bool =
 
   return true
 
-proc hashableContent*(rootEntry: RootEntry): seq[byte] {.raises: [ValueError].} =
+func hashableContent*(rootEntry: RootEntry): seq[byte] {.raises: [ValueError].} =
   # Returns the hashable content of a root entry, used to compute the `sig=` portion
   return fmt"{RootPrefix} e={rootEntry.eroot} l={rootEntry.lroot} seq={rootEntry.seqNo}".toBytes()
 
@@ -93,7 +92,7 @@ proc hashableContent*(rootEntry: RootEntry): seq[byte] {.raises: [ValueError].} 
 # Entry parsers #
 #################
 
-proc parseRootEntry*(entry: string): EntryParseResult[RootEntry] =
+func parseRootEntry*(entry: string): EntryParseResult[RootEntry] =
   ## Parses a root entry in the format
   ## 'enrtree-root:v1 e=<enr-root> l=<link-root> seq=<sequence-number> sig=<signature>'
 
@@ -122,7 +121,7 @@ proc parseRootEntry*(entry: string): EntryParseResult[RootEntry] =
 
   ok(RootEntry(eroot: eroot, lroot: lroot, seqNo: uint32(seqNo), signature: signature))
 
-proc parseBranchEntry*(entry: string): EntryParseResult[BranchEntry] =
+func parseBranchEntry*(entry: string): EntryParseResult[BranchEntry] =
   ## Parses a branch entry in the format
   ## 'enrtree-branch:<h₁>,<h₂>,...,<hₙ>'
 
@@ -145,7 +144,7 @@ proc parseBranchEntry*(entry: string): EntryParseResult[BranchEntry] =
 
   ok(BranchEntry(children: hashes))
 
-proc parseEnrEntry*(entry: string): EntryParseResult[EnrEntry] =
+func parseEnrEntry*(entry: string): EntryParseResult[EnrEntry] =
   ## Parses an enr entry in the format 'enr:<node-record>'.
   ## <node-record> is the EIP-1459 text encoding of the node record
 
@@ -165,7 +164,7 @@ proc parseEnrEntry*(entry: string): EntryParseResult[EnrEntry] =
 
   ok(EnrEntry(record: record))
 
-proc parseLinkEntry*(entry: string): EntryParseResult[LinkEntry] =
+func parseLinkEntry*(entry: string): EntryParseResult[LinkEntry] =
   ## Parses a link entry in the format
   ## 'enrtree://<key>@<fqdn>'
 
@@ -195,7 +194,7 @@ proc parseLinkEntry*(entry: string): EntryParseResult[LinkEntry] =
                domain: fqdnStr,
                pubKey: key))
 
-proc parseSubtreeEntry*(entry: string): EntryParseResult[SubtreeEntry] =
+func parseSubtreeEntry*(entry: string): EntryParseResult[SubtreeEntry] =
   var subtreeEntry: SubtreeEntry
 
   try:
@@ -216,13 +215,13 @@ proc parseSubtreeEntry*(entry: string): EntryParseResult[SubtreeEntry] =
 # Tree accessors #
 ##################
 
-proc getNodes*(tree: Tree): seq[EnrEntry] {.raises: [ValueError]} =
+func getNodes*(tree: Tree): seq[EnrEntry] {.raises: []} =
   ## Returns a list of node entries in the tree
 
   return tree.entries.filterIt(it.kind == Enr)
                      .mapIt(it.enrEntry)
 
-proc getLinks*(tree: Tree): seq[LinkEntry] {.raises: [ValueError]} =
+func getLinks*(tree: Tree): seq[LinkEntry] {.raises: []} =
   ## Returns a list of link entries in the tree
 
   return tree.entries.filterIt(it.kind == Link)

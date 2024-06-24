@@ -1,7 +1,7 @@
 {.used.}
 
 import
-  std/[strutils, sequtils],
+  std/strutils,
   testutils/unittests,
   chronos,
   stew/[base64, results],

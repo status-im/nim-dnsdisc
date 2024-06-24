@@ -1,7 +1,7 @@
-{.push raises: []}
+{.push raises: [].}
 
 import
-  std/[sequtils, sets, strformat],
+  std/[sequtils, sets],
   chronicles,
   chronos,
   eth/keys,
@@ -40,7 +40,7 @@ const
 # Tree sync functions #
 #######################
 
-proc parseAndVerifySubtreeEntry(txtRecord: string, hashStr: string): EntryParseResult[SubtreeEntry] {.raises: [ValueError, Base32Error].} =
+func parseAndVerifySubtreeEntry(txtRecord: string, hashStr: string): EntryParseResult[SubtreeEntry] {.raises: [ValueError, Base32Error].} =
   ## Parses subtree TXT entry and verifies that it matches the hash
 
   let res = parseSubtreeEntry(txtRecord)
@@ -125,7 +125,7 @@ proc resolveAllEntries*(resolver: Resolver, loc: LinkEntry, rootEntry: RootEntry
 
   return subtreeEntries
 
-proc verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool =
+func verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool =
   ## Verifies the signature on the root against the public key
   let sig = SignatureNR.fromRaw(rootEntry.signature)
 
@@ -141,7 +141,7 @@ proc verifySignature(rootEntry: RootEntry, pubKey: PublicKey): bool =
                   msg = sigHash,
                   key = pubKey)
 
-proc parseAndVerifyRoot(txtRecord: string, loc: LinkEntry): EntryParseResult[RootEntry] =
+func parseAndVerifyRoot(txtRecord: string, loc: LinkEntry): EntryParseResult[RootEntry] =
   ## Parses root TXT record and verifies signature
 
   let res = parseRootEntry(txtRecord)
@@ -203,7 +203,7 @@ proc syncTree(resolver: Resolver, rootLocation: LinkEntry): Future[Result[Tree, 
 # Client API #
 ##############
 
-proc init*(T: type Client,
+func init*(T: type Client,
            locationUrl: string): Result[T, cstring] =
   ## Initialise client from a DNS node list URL
   ## with format 'enrtree://<key>@<fqdn>'
@@ -215,7 +215,7 @@ proc init*(T: type Client,
 
   return ok(Client(loc: locLink.get()))
 
-proc getNodeRecords*(c: Client): seq[Record] =
+func getNodeRecords*(c: Client): seq[Record] =
   ## Returns a list of node records in the client tree
 
   try:

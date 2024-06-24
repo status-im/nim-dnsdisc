@@ -14,7 +14,7 @@ jobs:
           - NPROC: 2
             MAKEFLAGS: "-j${NPROC}"
             NIMFLAGS: "--parallelBuild:${NPROC}"
-        branch: [version-1-6, version-2-0]
+        branch: [upstream/version-1-6, upstream/version-2-0]
         os: [ubuntu-latest, macos-latest]
     
     name: '${{ matrix.os }} (Nim ${{ matrix.branch }})'
@@ -40,5 +40,4 @@ jobs:
       - name: Run tests
         run: |
           nim --version
-          make NIMFLAGS="--mm:refc" test
-          make NIMFLAGS="--mm:orc" test
+          make NIM_COMMIT="${{ matrix.branch }}" -j"${NPROC}" test

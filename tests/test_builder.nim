@@ -8,6 +8,22 @@ import
   ./test_utils
 
 procSuite "Test DNS Discovery: Merkle Tree builder":
+  setup:
+    let
+      exampleRecords = initExampleRecords()
+      exampleRoot = parseRootEntry(RootTxt).get()
+      exampleLink = parseSubtreeEntry(LinkTxt).get()
+      exampleBranch = parseSubtreeEntry(BranchTxt).get()
+      exampleEnr1 = parseSubtreeEntry(Enr1Txt).get()
+      exampleEnr2 = parseSubtreeEntry(Enr2Txt).get()
+      exampleEnr3 = parseSubtreeEntry(Enr3Txt).get()
+      exampleTree = Tree(rootEntry: exampleRoot,
+                          entries: @[exampleLink,
+                                     exampleBranch,
+                                     exampleEnr1,
+                                     exampleEnr2,
+                                     exampleEnr3])
+
   # Test tree entries:
 
   asyncTest "Create TXT records":
