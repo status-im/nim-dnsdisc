@@ -31,12 +31,6 @@ jobs:
       - name: Submodules
         run: git submodule update --init --recursive
 
-      - name: Cache nim
-        uses: actions/cache@v2
-        with:
-          path: vendor/nimbus-build-system/vendor/Nim/bin
-          key: ${{ runner.os }}-${{ matrix.env.NPROC }}-${{ matrix.branch }}-nim-${{ hashFiles('.gitmodules') }}
-
       - name: Build the Nim compiler
         run: |
           curl -O -L -s -S https://raw.githubusercontent.com/status-im/nimbus-build-system/master/scripts/build_nim.sh
@@ -46,5 +40,5 @@ jobs:
       - name: Run tests
         run: |
           nim --version
-          make NIM_FLAGS="--mm:refc" test
-          make NIM_FLAGS="--mm:orc" test
+          make NIMFLAGS="--mm:refc" test
+          make NIMFLAGS="--mm:orc" test
