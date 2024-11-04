@@ -184,7 +184,7 @@ proc resolveRoot*(resolver: Resolver, loc: LinkEntry): Future[ResolveResult[Root
 
   return ok(res[])
 
-proc syncTree(resolver: Resolver, rootLocation: LinkEntry): Future[Result[Tree, cstring]] {.async.} =
+proc syncTree*(resolver: Resolver, rootLocation: LinkEntry): Future[Result[Tree, cstring]] {.async.} =
   ## Synchronises the client tree according to EIP-1459
 
   let rootEntry = await resolveRoot(resolver, rootLocation)
