@@ -4,7 +4,8 @@ import
   std/strutils,
   testutils/unittests,
   chronos,
-  stew/[base64, results],
+  stew/[base64],
+  results,
   ../dnsdisc/tree
 
 procSuite "Test DNS Discovery: Merkle Tree":

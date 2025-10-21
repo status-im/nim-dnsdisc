@@ -2,8 +2,9 @@
 
 import
   std/[sequtils, strformat, strutils, tables],
-  stew/[base64, base32, byteutils, results],
+  stew/[base64, base32, byteutils],
   nimcrypto/[hash, keccak],
+  results,
   ./tree
 
 export tree
