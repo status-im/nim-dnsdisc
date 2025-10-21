@@ -2,9 +2,10 @@
 
 import
   std/[strformat, strscans, strutils, sequtils],
-  stew/[base32, base64, byteutils, results],
+  stew/[base32, base64, byteutils],
   eth/keys,
-  eth/p2p/discoveryv5/enr
+  eth/p2p/discoveryv5/enr,
+  results
 
 export keys, enr
 

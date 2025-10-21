@@ -6,7 +6,8 @@ import
   chronos,
   eth/keys,
   nimcrypto/[hash, keccak],
-  stew/[base32, byteutils, results],
+  results,
+  stew/[base32, byteutils],
   ./tree
 
 export
