@@ -6,6 +6,15 @@
 
 Nim DNS discovery library supporting EIP-1459
 
+## Setting up development environment
+
+```sh
+git clone ...
+cd nim-dnsdisc
+nimble develop --withDependencies --lockfile:ci.lock
+nimble setup --lockfile:ci.lock
+```
+
 ## License
 
 Licensed and distributed under either of

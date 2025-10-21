@@ -24,3 +24,6 @@
 /.update.timestamp
 
 *.nims
+nimble.develop
+nimble.paths
+nimbledeps
