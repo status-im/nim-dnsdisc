@@ -4,13 +4,24 @@ import
   std/tables,
   chronicles,
   json_rpc/rpcserver,
-  stew/shims/net,
+  json_rpc/jsonmarshal,
+  net,
   results,
   ./tree_creator,
   json_serialization/std/[options, tables]
 
 logScope:
   topics = "tree.creator.rpc"
+
+when declared(json_serialization.automaticSerialization):
+  JrpcConv.automaticSerialization(JsonString, true)
+  JrpcConv.automaticSerialization(array, true)
+  JrpcConv.automaticSerialization(bool, true)
+  JrpcConv.automaticSerialization(float, true)
+  JrpcConv.automaticSerialization(int, true)
+  JrpcConv.automaticSerialization(int64, true)
+  JrpcConv.automaticSerialization(seq, true)
+  JrpcConv.automaticSerialization(string, true)
 
 proc installRpcApiHandlers(initTc: TreeCreator, rpcsrv: RpcServer)
   {.gcsafe, raises: [CatchableError].} =
@@ -47,7 +58,7 @@ proc installRpcApiHandlers(initTc: TreeCreator, rpcsrv: RpcServer)
     let url = tc.getURL().tryGet()
     return url
 
-proc startRpc*(tc: var TreeCreator, rpcIp: ValidIpAddress, rpcPort: Port)
+proc startRpc*(tc: var TreeCreator, rpcIp: IpAddress, rpcPort: Port)
   {.raises: [RpcBindError, CatchableError].} =
   info "Starting RPC server"
   let

@@ -180,7 +180,6 @@ proc init*(T: type TreeCreator,
 when isMainModule:
   import
     confutils,
-    stew/shims/net as stewNet,
     ./tree_creator_conf,
     ./tree_creator_rpc
 
