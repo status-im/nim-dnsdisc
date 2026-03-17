@@ -6,6 +6,13 @@
 
 Nim DNS discovery library supporting EIP-1459
 
+# Build
+
+Simplest way is using Nix:
+```sh
+nix build 'git+https://github.com/status-im/nim-dnsdisc'
+```
+
 ## License
 
 Licensed and distributed under either of

@@ -20,6 +20,10 @@ requires "nim >= 1.6.0",
   "nimcrypto",
   "results"
 
+when withDir(thisDir(), system.fileExists("nimbus-build-system.paths")):
+  if getEnv("NIMBUS_BUILD_SYSTEM") == "yes":
+    include "nimbus-build-system.paths"
+
 # Helper functions
 proc buildBinary(name: string, srcDir = "./", params = "", lang = "c") =
   if not dirExists "build":
