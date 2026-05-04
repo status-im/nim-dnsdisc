@@ -31,8 +31,8 @@ type
 
     rpcAddress* {.
       desc: "Listening address of the JSON-RPC server.",
-      defaultValue: ValidIpAddress.init("127.0.0.1")
-      name: "rpc-address" }: ValidIpAddress
+      defaultValue: parseIpAddress("127.0.0.1")
+      name: "rpc-address" }: IpAddress
 
     rpcPort* {.
       desc: "Listening port of the JSON-RPC server.",
@@ -74,12 +74,12 @@ proc parseCmdArg*(T: type LinkEntry, p: TaintedString): T =
 proc completeCmdArg*(T: type LinkEntry, val: TaintedString): seq[string] =
   return @[]
 
-proc parseCmdArg*(T: type ValidIpAddress, p: TaintedString): T =
+proc parseCmdArg*(T: type IpAddress, p: TaintedString): T =
   try:
-    let ipAddr = ValidIpAddress.init(p)
+    let ipAddr = parseIpAddress(p)
     return ipAddr
   except CatchableError as e:
     raise newException(ConfigurationError, "Invalid IP address")
 
-proc completeCmdArg*(T: type ValidIpAddress, val: TaintedString): seq[string] =
+proc completeCmdArg*(T: type IpAddress, val: TaintedString): seq[string] =
   return @[]

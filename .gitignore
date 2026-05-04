@@ -23,4 +23,5 @@
 *.log
 /.update.timestamp
 
-*.nims
+nimbus-build-system.paths
+result
