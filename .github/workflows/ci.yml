@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  packages: read
+  contents: read
+
 jobs:
   build:
     uses: status-im/nimbus-common-workflow/.github/workflows/common.yml@main
